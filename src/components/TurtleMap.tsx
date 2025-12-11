@@ -1,10 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import { Turtle, Beach } from '@/data/mockData';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { MapPin, Activity, Thermometer, ArrowRight } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
 // Fix for default marker icons
@@ -50,7 +46,7 @@ const createTurtleIcon = (status: string) => {
 };
 
 // Custom beach icon
-const beachIcon = L.divIcon({
+const createBeachIcon = () => L.divIcon({
   className: 'custom-beach-marker',
   html: `
     <div style="
@@ -84,28 +80,6 @@ interface TurtleMapProps {
   className?: string;
 }
 
-function MapController({ center, zoom, selectedTurtle, turtles }: { 
-  center: [number, number]; 
-  zoom: number;
-  selectedTurtle?: string | null;
-  turtles: Turtle[];
-}) {
-  const map = useMap();
-  
-  useEffect(() => {
-    if (selectedTurtle) {
-      const turtle = turtles.find(t => t.id === selectedTurtle);
-      if (turtle) {
-        map.flyTo([turtle.location.lat, turtle.location.lng], 6, {
-          duration: 1.5
-        });
-      }
-    }
-  }, [selectedTurtle, turtles, map]);
-  
-  return null;
-}
-
 export function TurtleMap({ 
   turtles, 
   beaches = [],
@@ -115,113 +89,140 @@ export function TurtleMap({
   zoom = 2,
   className = 'h-[600px] w-full'
 }: TurtleMapProps) {
+  const mapRef = useRef<L.Map | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const markersRef = useRef<L.Marker[]>([]);
+  const polylinesRef = useRef<L.Polyline[]>([]);
+
+  // Initialize map
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+
+    mapRef.current = L.map(containerRef.current).setView(center, zoom);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(mapRef.current);
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, []);
+
+  // Handle selected turtle fly-to
+  useEffect(() => {
+    if (!mapRef.current || !selectedTurtle) return;
+    
+    const turtle = turtles.find(t => t.id === selectedTurtle);
+    if (turtle) {
+      mapRef.current.flyTo([turtle.location.lat, turtle.location.lng], 6, {
+        duration: 1.5
+      });
+    }
+  }, [selectedTurtle, turtles]);
+
+  // Update markers and polylines
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Clear existing markers and polylines
+    markersRef.current.forEach(marker => marker.remove());
+    polylinesRef.current.forEach(polyline => polyline.remove());
+    markersRef.current = [];
+    polylinesRef.current = [];
+
+    // Add migration trails
+    if (showTrails) {
+      turtles.forEach((turtle) => {
+        const polyline = L.polyline(
+          turtle.migrationTrail.map(p => [p.lat, p.lng] as L.LatLngTuple),
+          {
+            color: selectedTurtle === turtle.id ? '#0891b2' : '#94a3b8',
+            weight: selectedTurtle === turtle.id ? 3 : 2,
+            opacity: selectedTurtle === turtle.id ? 1 : 0.5,
+            dashArray: selectedTurtle === turtle.id ? undefined : '5, 10',
+          }
+        ).addTo(mapRef.current!);
+        polylinesRef.current.push(polyline);
+      });
+    }
+
+    // Add beach markers
+    beaches.forEach((beach) => {
+      const marker = L.marker([beach.location.lat, beach.location.lng], {
+        icon: createBeachIcon(),
+      }).addTo(mapRef.current!);
+
+      marker.bindPopup(`
+        <div style="padding: 12px; min-width: 200px;">
+          <h3 style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">${beach.name}</h3>
+          <p style="font-size: 14px; color: #666; margin-bottom: 12px;">${beach.country}</p>
+          <div style="display: flex; gap: 16px; margin-bottom: 12px;">
+            <div>
+              <p style="font-size: 18px; font-weight: 700;">${beach.nestCount}</p>
+              <p style="font-size: 12px; color: #888;">Nests</p>
+            </div>
+            <div>
+              <p style="font-size: 18px; font-weight: 700;">${beach.volunteers}</p>
+              <p style="font-size: 12px; color: #888;">Volunteers</p>
+            </div>
+          </div>
+          <a href="/beaches/${beach.id}" style="display: block; text-align: center; background: hsl(200, 80%, 25%); color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 14px;">View Beach</a>
+        </div>
+      `);
+
+      markersRef.current.push(marker);
+    });
+
+    // Add turtle markers
+    turtles.forEach((turtle) => {
+      const marker = L.marker([turtle.location.lat, turtle.location.lng], {
+        icon: createTurtleIcon(turtle.status),
+      }).addTo(mapRef.current!);
+
+      marker.bindPopup(`
+        <div style="padding: 12px; min-width: 220px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <img 
+              src="${turtle.image}" 
+              alt="${turtle.name}"
+              style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;"
+            />
+            <div>
+              <h3 style="font-weight: 600; font-size: 16px;">${turtle.name}</h3>
+              <p style="font-size: 14px; color: #666;">${turtle.species}</p>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
+            <div style="text-align: center; padding: 8px; background: #f5f5f5; border-radius: 8px;">
+              <p style="font-size: 12px; color: #888;">Temp</p>
+              <p style="font-size: 14px; font-weight: 500;">${turtle.temperature}°C</p>
+            </div>
+            <div style="text-align: center; padding: 8px; background: #f5f5f5; border-radius: 8px;">
+              <p style="font-size: 12px; color: #888;">Speed</p>
+              <p style="font-size: 14px; font-weight: 500;">${turtle.speed} km/h</p>
+            </div>
+            <div style="text-align: center; padding: 8px; background: #f5f5f5; border-radius: 8px;">
+              <p style="font-size: 12px; color: #888;">Depth</p>
+              <p style="font-size: 14px; font-weight: 500;">${turtle.depth}m</p>
+            </div>
+          </div>
+
+          <a href="/turtles/${turtle.id}" style="display: block; text-align: center; background: hsl(200, 80%, 25%); color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 14px;">View Profile →</a>
+        </div>
+      `);
+
+      markersRef.current.push(marker);
+    });
+  }, [turtles, beaches, selectedTurtle, showTrails]);
+
   return (
     <div className={className}>
-      <MapContainer
-        center={center}
-        zoom={zoom}
-        className="h-full w-full rounded-2xl"
-        scrollWheelZoom={true}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-        />
-        
-        <MapController 
-          center={center} 
-          zoom={zoom} 
-          selectedTurtle={selectedTurtle}
-          turtles={turtles}
-        />
-
-        {/* Migration trails */}
-        {showTrails && turtles.map((turtle) => (
-          <Polyline
-            key={`trail-${turtle.id}`}
-            positions={turtle.migrationTrail.map(p => [p.lat, p.lng] as L.LatLngExpression)}
-            color={selectedTurtle === turtle.id ? '#0891b2' : '#94a3b8'}
-            weight={selectedTurtle === turtle.id ? 3 : 2}
-            opacity={selectedTurtle === turtle.id ? 1 : 0.5}
-            dashArray={selectedTurtle === turtle.id ? undefined : '5, 10'}
-          />
-        ))}
-
-        {/* Beach markers */}
-        {beaches.map((beach) => (
-          <Marker
-            key={beach.id}
-            position={[beach.location.lat, beach.location.lng]}
-            icon={beachIcon}
-          >
-            <Popup>
-              <div className="p-3 min-w-[200px]">
-                <h3 className="font-semibold text-lg mb-1">{beach.name}</h3>
-                <p className="text-sm text-muted-foreground mb-3">{beach.country}</p>
-                <div className="flex gap-4 mb-3">
-                  <div>
-                    <p className="text-lg font-bold">{beach.nestCount}</p>
-                    <p className="text-xs text-muted-foreground">Nests</p>
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold">{beach.volunteers}</p>
-                    <p className="text-xs text-muted-foreground">Volunteers</p>
-                  </div>
-                </div>
-                <Link to={`/beaches/${beach.id}`}>
-                  <Button size="sm" className="w-full">View Beach</Button>
-                </Link>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-
-        {/* Turtle markers */}
-        {turtles.map((turtle) => (
-          <Marker
-            key={turtle.id}
-            position={[turtle.location.lat, turtle.location.lng]}
-            icon={createTurtleIcon(turtle.status)}
-          >
-            <Popup>
-              <div className="p-3 min-w-[220px]">
-                <div className="flex items-center gap-3 mb-3">
-                  <img 
-                    src={turtle.image} 
-                    alt={turtle.name}
-                    className="w-12 h-12 rounded-lg object-cover"
-                  />
-                  <div>
-                    <h3 className="font-semibold text-lg">{turtle.name}</h3>
-                    <p className="text-sm text-muted-foreground">{turtle.species}</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  <div className="text-center p-2 bg-muted/50 rounded-lg">
-                    <Thermometer className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
-                    <p className="text-sm font-medium">{turtle.temperature}°C</p>
-                  </div>
-                  <div className="text-center p-2 bg-muted/50 rounded-lg">
-                    <Activity className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
-                    <p className="text-sm font-medium">{turtle.speed} km/h</p>
-                  </div>
-                  <div className="text-center p-2 bg-muted/50 rounded-lg">
-                    <MapPin className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
-                    <p className="text-sm font-medium">{turtle.depth}m</p>
-                  </div>
-                </div>
-
-                <Link to={`/turtles/${turtle.id}`}>
-                  <Button size="sm" className="w-full">
-                    View Profile <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+      <div ref={containerRef} className="h-full w-full rounded-2xl" />
     </div>
   );
 }
