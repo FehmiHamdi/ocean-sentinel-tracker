@@ -1,96 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Ocean-inspired color palette */
+    --background: 200 30% 98%;
+    --foreground: 200 50% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 200 50% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 200 50% 10%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Deep ocean blue */
+    --primary: 200 80% 25%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Seafoam teal */
+    --secondary: 174 60% 40%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Light ocean mist */
+    --muted: 200 30% 94%;
+    --muted-foreground: 200 20% 40%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Coral accent */
+    --accent: 16 85% 60%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Danger/threat red */
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 200 30% 88%;
+    --input: 200 30% 88%;
+    --ring: 200 80% 25%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Custom ocean colors */
+    --ocean-deep: 200 80% 20%;
+    --ocean-mid: 200 70% 35%;
+    --ocean-light: 185 60% 50%;
+    --ocean-surface: 180 50% 70%;
+    --seafoam: 160 60% 85%;
+    --sand: 40 40% 90%;
+    --coral: 16 85% 60%;
+    --seaweed: 150 50% 35%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Gradients */
+    --gradient-ocean: linear-gradient(135deg, hsl(200 80% 25%) 0%, hsl(185 60% 50%) 100%);
+    --gradient-surface: linear-gradient(180deg, hsl(200 30% 98%) 0%, hsl(180 50% 95%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(200 80% 15%) 0%, hsl(200 70% 30%) 50%, hsl(174 60% 40%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(200 30% 98%) 100%);
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* Shadows */
+    --shadow-sm: 0 2px 8px -2px hsl(200 80% 25% / 0.1);
+    --shadow-md: 0 8px 24px -6px hsl(200 80% 25% / 0.15);
+    --shadow-lg: 0 16px 48px -12px hsl(200 80% 25% / 0.2);
+    --shadow-glow: 0 0 40px hsl(185 60% 50% / 0.3);
 
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 200 30% 98%;
+    --sidebar-foreground: 200 50% 10%;
+    --sidebar-primary: 200 80% 25%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 174 60% 40%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 200 30% 88%;
+    --sidebar-ring: 200 80% 25%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 200 50% 8%;
+    --foreground: 200 20% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 200 40% 12%;
+    --card-foreground: 200 20% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 200 40% 12%;
+    --popover-foreground: 200 20% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 185 60% 50%;
+    --primary-foreground: 200 50% 8%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 174 50% 35%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 200 30% 18%;
+    --muted-foreground: 200 20% 60%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 16 70% 55%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 60% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 200 30% 20%;
+    --input: 200 30% 20%;
+    --ring: 185 60% 50%;
+
+    --ocean-deep: 200 70% 15%;
+    --ocean-mid: 200 60% 25%;
+    --ocean-light: 185 50% 40%;
+
+    --gradient-ocean: linear-gradient(135deg, hsl(200 70% 15%) 0%, hsl(185 50% 40%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(200 60% 8%) 0%, hsl(200 50% 18%) 50%, hsl(174 50% 30%) 100%);
+
+    --sidebar-background: 200 40% 12%;
+    --sidebar-foreground: 200 20% 95%;
+    --sidebar-primary: 185 60% 50%;
+    --sidebar-primary-foreground: 200 50% 8%;
+    --sidebar-accent: 174 50% 35%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 200 30% 20%;
+    --sidebar-ring: 185 60% 50%;
   }
 }
 
@@ -100,6 +127,131 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
   }
+
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .ocean-gradient {
+    background: var(--gradient-ocean);
+  }
+
+  .hero-gradient {
+    background: var(--gradient-hero);
+  }
+
+  .surface-gradient {
+    background: var(--gradient-surface);
+  }
+
+  .card-gradient {
+    background: var(--gradient-card);
+  }
+
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-md border border-border/50;
+    box-shadow: var(--shadow-md);
+  }
+
+  .shadow-ocean {
+    box-shadow: var(--shadow-lg);
+  }
+
+  .glow-effect {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .wave-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%230891b2' fill-opacity='0.1' d='M0,192L48,176C96,160,192,128,288,133.3C384,139,480,181,576,186.7C672,192,768,160,864,154.7C960,149,1056,171,1152,165.3C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: bottom;
+    background-size: 100% auto;
+  }
+}
+
+@layer utilities {
+  .text-gradient-ocean {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-ocean);
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-wave {
+    animation: wave 3s ease-in-out infinite;
+  }
+
+  .animate-bubble {
+    animation: bubble 4s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(-5px) rotate(-2deg);
+  }
+  75% {
+    transform: translateX(5px) rotate(2deg);
+  }
+}
+
+@keyframes bubble {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-10px) scale(1.05);
+    opacity: 1;
+  }
+}
+
+/* Leaflet map styles */
+.leaflet-container {
+  @apply rounded-xl;
+  font-family: inherit;
+}
+
+.leaflet-popup-content-wrapper {
+  @apply rounded-lg shadow-ocean;
+}
+
+.leaflet-popup-content {
+  @apply m-0 p-0;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-muted rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-primary/30 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary/50;
 }
