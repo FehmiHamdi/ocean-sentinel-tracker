@@ -11,6 +11,7 @@ import BeachesPage from "./pages/BeachesPage";
 import EducationPage from "./pages/EducationPage";
 import AdminPage from "./pages/AdminPage";
 import NotFound from "./pages/NotFound";
+import TurtleGuardianChat from "./components/TurtleGuardianChat";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <TurtleGuardianChat />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
