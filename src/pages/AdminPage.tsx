@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { 
   Shell, 
   Map, 
-  Users, 
   AlertTriangle,
   TrendingUp,
   Plus,
@@ -12,12 +11,13 @@ import {
   Trash2,
   Bell,
   BarChart3,
-  Activity
+  Activity,
+  Loader2
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { StatCard } from '@/components/StatCard';
-import { turtles, beaches, alerts, stats } from '@/data/mockData';
+import { alerts, stats } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -43,10 +43,15 @@ import {
   Cell,
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import { TurtleFormDialog } from '@/components/admin/TurtleFormDialog';
+import { BeachFormDialog } from '@/components/admin/BeachFormDialog';
+import { DeleteConfirmDialog } from '@/components/admin/DeleteConfirmDialog';
+import { useAdminTurtles } from '@/hooks/useAdminTurtles';
+import { useAdminBeaches } from '@/hooks/useAdminBeaches';
 
 const COLORS = ['#0891b2', '#0d9488', '#f59e0b', '#ef4444', '#8b5cf6'];
 
-const alertTypeColors = {
+const alertTypeColors: Record<string, string> = {
   danger: 'bg-red-500/20 text-red-700 border-red-500/30',
   warning: 'bg-amber-500/20 text-amber-700 border-amber-500/30',
   info: 'bg-blue-500/20 text-blue-700 border-blue-500/30',
@@ -54,18 +59,126 @@ const alertTypeColors = {
 
 const statusColors: Record<string, string> = {
   active: 'bg-green-500',
-  nesting: 'bg-amber-500',
-  migrating: 'bg-blue-500',
-  resting: 'bg-gray-500',
+  missing: 'bg-amber-500',
+  released: 'bg-blue-500',
+  deceased: 'bg-gray-500',
 };
 
 export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Turtle state
+  const {
+    turtles,
+    isLoading: turtlesLoading,
+    isSubmitting: turtleSubmitting,
+    addTurtle,
+    updateTurtle,
+    deleteTurtle,
+  } = useAdminTurtles();
+  
+  const [turtleDialogOpen, setTurtleDialogOpen] = useState(false);
+  const [selectedTurtle, setSelectedTurtle] = useState<typeof turtles[0] | null>(null);
+  const [deleteTurtleDialog, setDeleteTurtleDialog] = useState<{ open: boolean; turtle: typeof turtles[0] | null }>({
+    open: false,
+    turtle: null,
+  });
+
+  // Beach state
+  const {
+    beaches,
+    isLoading: beachesLoading,
+    isSubmitting: beachSubmitting,
+    addBeach,
+    updateBeach,
+    deleteBeach,
+  } = useAdminBeaches();
+  
+  const [beachDialogOpen, setBeachDialogOpen] = useState(false);
+  const [selectedBeach, setSelectedBeach] = useState<typeof beaches[0] | null>(null);
+  const [deleteBeachDialog, setDeleteBeachDialog] = useState<{ open: boolean; beach: typeof beaches[0] | null }>({
+    open: false,
+    beach: null,
+  });
 
   const filteredTurtles = turtles.filter((turtle) =>
     turtle.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     turtle.species.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Turtle handlers
+  const handleAddTurtle = () => {
+    setSelectedTurtle(null);
+    setTurtleDialogOpen(true);
+  };
+
+  const handleEditTurtle = (turtle: typeof turtles[0]) => {
+    setSelectedTurtle(turtle);
+    setTurtleDialogOpen(true);
+  };
+
+  const handleDeleteTurtle = (turtle: typeof turtles[0]) => {
+    setDeleteTurtleDialog({ open: true, turtle });
+  };
+
+  const handleTurtleSubmit = async (data: any) => {
+    let success: boolean;
+    if (selectedTurtle) {
+      success = await updateTurtle(selectedTurtle.id, data);
+    } else {
+      success = await addTurtle(data);
+    }
+    if (success) {
+      setTurtleDialogOpen(false);
+      setSelectedTurtle(null);
+    }
+  };
+
+  const handleConfirmDeleteTurtle = async () => {
+    if (deleteTurtleDialog.turtle) {
+      const success = await deleteTurtle(deleteTurtleDialog.turtle.id, deleteTurtleDialog.turtle.name);
+      if (success) {
+        setDeleteTurtleDialog({ open: false, turtle: null });
+      }
+    }
+  };
+
+  // Beach handlers
+  const handleAddBeach = () => {
+    setSelectedBeach(null);
+    setBeachDialogOpen(true);
+  };
+
+  const handleEditBeach = (beach: typeof beaches[0]) => {
+    setSelectedBeach(beach);
+    setBeachDialogOpen(true);
+  };
+
+  const handleDeleteBeach = (beach: typeof beaches[0]) => {
+    setDeleteBeachDialog({ open: true, beach });
+  };
+
+  const handleBeachSubmit = async (data: any) => {
+    let success: boolean;
+    if (selectedBeach) {
+      success = await updateBeach(selectedBeach.id, data);
+    } else {
+      success = await addBeach(data);
+    }
+    if (success) {
+      setBeachDialogOpen(false);
+      setSelectedBeach(null);
+    }
+  };
+
+  const handleConfirmDeleteBeach = async () => {
+    if (deleteBeachDialog.beach) {
+      const success = await deleteBeach(deleteBeachDialog.beach.id, deleteBeachDialog.beach.name);
+      if (success) {
+        setDeleteBeachDialog({ open: false, beach: null });
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -87,7 +200,7 @@ export default function AdminPage() {
                 Manage turtle tracking data, beaches, and monitor conservation efforts.
               </p>
             </div>
-            <Button className="shrink-0">
+            <Button className="shrink-0" onClick={handleAddTurtle}>
               <Plus className="w-4 h-4 mr-2" />
               Add New Turtle
             </Button>
@@ -101,19 +214,19 @@ export default function AdminPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard 
               label="Total Turtles" 
-              value={stats.totalTurtles} 
+              value={turtles.length || stats.totalTurtles} 
               icon={Shell}
               variant="primary"
             />
             <StatCard 
               label="Active Trackers" 
-              value={stats.activeTurtles} 
+              value={turtles.filter(t => t.status === 'active').length || stats.activeTurtles} 
               icon={Activity}
               trend={{ value: 8, positive: true }}
             />
             <StatCard 
               label="Nesting Beaches" 
-              value={stats.nestingBeaches} 
+              value={beaches.length || stats.nestingBeaches} 
               icon={Map}
             />
             <StatCard 
@@ -149,60 +262,85 @@ export default function AdminPage() {
                     className="pl-10"
                   />
                 </div>
+                <Button onClick={handleAddTurtle}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Turtle
+                </Button>
               </div>
 
               <div className="glass-card rounded-2xl overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Species</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Health</TableHead>
-                      <TableHead>Last Seen</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredTurtles.map((turtle) => (
-                      <TableRow key={turtle.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <img 
-                              src={turtle.image} 
-                              alt={turtle.name}
-                              className="w-10 h-10 rounded-lg object-cover"
-                            />
-                            <span className="font-medium">{turtle.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{turtle.species}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className={cn("w-2 h-2 rounded-full", statusColors[turtle.status])} />
-                            <span className="capitalize">{turtle.status}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="capitalize">{turtle.healthStatus}</span>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(turtle.lastSeen).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="text-destructive">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                {turtlesLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  </div>
+                ) : filteredTurtles.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    {searchQuery ? 'No turtles match your search.' : 'No turtles found. Add one to get started.'}
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Species</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Health</TableHead>
+                        <TableHead>Last Seen</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredTurtles.map((turtle) => (
+                        <TableRow key={turtle.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              {turtle.photo_url && (
+                                <img 
+                                  src={turtle.photo_url} 
+                                  alt={turtle.name}
+                                  className="w-10 h-10 rounded-lg object-cover"
+                                />
+                              )}
+                              <span className="font-medium">{turtle.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{turtle.species}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className={cn("w-2 h-2 rounded-full", statusColors[turtle.status] || 'bg-gray-500')} />
+                              <span className="capitalize">{turtle.status}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="capitalize">{turtle.health_status || 'Unknown'}</span>
+                          </TableCell>
+                          <TableCell>
+                            {turtle.last_seen ? new Date(turtle.last_seen).toLocaleDateString() : 'N/A'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleEditTurtle(turtle)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="text-destructive"
+                                onClick={() => handleDeleteTurtle(turtle)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </div>
             </TabsContent>
 
@@ -210,55 +348,75 @@ export default function AdminPage() {
             <TabsContent value="beaches" className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Nesting Beaches</h2>
-                <Button>
+                <Button onClick={handleAddBeach}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Beach
                 </Button>
               </div>
 
               <div className="glass-card rounded-2xl overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Beach Name</TableHead>
-                      <TableHead>Country</TableHead>
-                      <TableHead>Nests</TableHead>
-                      <TableHead>Volunteers</TableHead>
-                      <TableHead>Threat Level</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {beaches.map((beach) => (
-                      <TableRow key={beach.id}>
-                        <TableCell className="font-medium">{beach.name}</TableCell>
-                        <TableCell>{beach.country}</TableCell>
-                        <TableCell>{beach.nestCount}</TableCell>
-                        <TableCell>{beach.volunteers}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={cn(
-                            "capitalize border",
-                            beach.threatLevel === 'high' && 'bg-red-500/20 text-red-700 border-red-500/30',
-                            beach.threatLevel === 'medium' && 'bg-amber-500/20 text-amber-700 border-amber-500/30',
-                            beach.threatLevel === 'low' && 'bg-green-500/20 text-green-700 border-green-500/30',
-                          )}>
-                            {beach.threatLevel}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="text-destructive">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                {beachesLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  </div>
+                ) : beaches.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    No beaches found. Add one to get started.
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Beach Name</TableHead>
+                        <TableHead>Country</TableHead>
+                        <TableHead>Nests</TableHead>
+                        <TableHead>Volunteers</TableHead>
+                        <TableHead>Threat Level</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {beaches.map((beach) => (
+                        <TableRow key={beach.id}>
+                          <TableCell className="font-medium">{beach.name}</TableCell>
+                          <TableCell>{beach.country}</TableCell>
+                          <TableCell>{beach.nests_count}</TableCell>
+                          <TableCell>{beach.volunteers_count}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={cn(
+                              "capitalize border",
+                              beach.threat_level === 'high' && 'bg-red-500/20 text-red-700 border-red-500/30',
+                              beach.threat_level === 'critical' && 'bg-red-600/20 text-red-800 border-red-600/30',
+                              beach.threat_level === 'medium' && 'bg-amber-500/20 text-amber-700 border-amber-500/30',
+                              beach.threat_level === 'low' && 'bg-green-500/20 text-green-700 border-green-500/30',
+                            )}>
+                              {beach.threat_level}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleEditBeach(beach)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="text-destructive"
+                                onClick={() => handleDeleteBeach(beach)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </div>
             </TabsContent>
 
@@ -407,6 +565,40 @@ export default function AdminPage() {
       </section>
 
       <Footer />
+
+      {/* Turtle Dialogs */}
+      <TurtleFormDialog
+        open={turtleDialogOpen}
+        onOpenChange={setTurtleDialogOpen}
+        turtle={selectedTurtle}
+        onSubmit={handleTurtleSubmit}
+        isLoading={turtleSubmitting}
+      />
+      <DeleteConfirmDialog
+        open={deleteTurtleDialog.open}
+        onOpenChange={(open) => setDeleteTurtleDialog({ open, turtle: open ? deleteTurtleDialog.turtle : null })}
+        title="Delete Turtle"
+        description={`Are you sure you want to delete "${deleteTurtleDialog.turtle?.name}"? This action cannot be undone.`}
+        onConfirm={handleConfirmDeleteTurtle}
+        isLoading={turtleSubmitting}
+      />
+
+      {/* Beach Dialogs */}
+      <BeachFormDialog
+        open={beachDialogOpen}
+        onOpenChange={setBeachDialogOpen}
+        beach={selectedBeach}
+        onSubmit={handleBeachSubmit}
+        isLoading={beachSubmitting}
+      />
+      <DeleteConfirmDialog
+        open={deleteBeachDialog.open}
+        onOpenChange={(open) => setDeleteBeachDialog({ open, beach: open ? deleteBeachDialog.beach : null })}
+        title="Delete Beach"
+        description={`Are you sure you want to delete "${deleteBeachDialog.beach?.name}"? This action cannot be undone.`}
+        onConfirm={handleConfirmDeleteBeach}
+        isLoading={beachSubmitting}
+      />
     </div>
   );
 }
