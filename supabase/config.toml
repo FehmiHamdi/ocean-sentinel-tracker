@@ -1,1 +1,4 @@
 project_id = "slbggmzpozufeushqnqx"
+
+[functions.turtle-guardian-chat]
+verify_jwt = false
