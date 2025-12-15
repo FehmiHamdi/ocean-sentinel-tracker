@@ -294,9 +294,9 @@ export default function AdminPage() {
                         <TableRow key={turtle.id}>
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              {turtle.photo_url && (
+                              {turtle.image && (
                                 <img 
-                                  src={turtle.photo_url} 
+                                  src={turtle.image} 
                                   alt={turtle.name}
                                   className="w-10 h-10 rounded-lg object-cover"
                                 />
@@ -312,10 +312,10 @@ export default function AdminPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <span className="capitalize">{turtle.health_status || 'Unknown'}</span>
+                            <span className="capitalize">{turtle.healthStatus || 'Unknown'}</span>
                           </TableCell>
                           <TableCell>
-                            {turtle.last_seen ? new Date(turtle.last_seen).toLocaleDateString() : 'N/A'}
+                            {turtle.lastSeen ? new Date(turtle.lastSeen).toLocaleDateString() : 'N/A'}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
@@ -380,17 +380,16 @@ export default function AdminPage() {
                         <TableRow key={beach.id}>
                           <TableCell className="font-medium">{beach.name}</TableCell>
                           <TableCell>{beach.country}</TableCell>
-                          <TableCell>{beach.nests_count}</TableCell>
-                          <TableCell>{beach.volunteers_count}</TableCell>
+                          <TableCell>{beach.nestCount}</TableCell>
+                          <TableCell>{beach.volunteers}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className={cn(
                               "capitalize border",
-                              beach.threat_level === 'high' && 'bg-red-500/20 text-red-700 border-red-500/30',
-                              beach.threat_level === 'critical' && 'bg-red-600/20 text-red-800 border-red-600/30',
-                              beach.threat_level === 'medium' && 'bg-amber-500/20 text-amber-700 border-amber-500/30',
-                              beach.threat_level === 'low' && 'bg-green-500/20 text-green-700 border-green-500/30',
+                              beach.threatLevel === 'high' && 'bg-red-500/20 text-red-700 border-red-500/30',
+                              beach.threatLevel === 'medium' && 'bg-amber-500/20 text-amber-700 border-amber-500/30',
+                              beach.threatLevel === 'low' && 'bg-green-500/20 text-green-700 border-green-500/30',
                             )}>
-                              {beach.threat_level}
+                              {beach.threatLevel}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">

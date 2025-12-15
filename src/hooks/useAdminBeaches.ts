@@ -1,39 +1,12 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import type { Tables } from '@/integrations/supabase/types';
-
-type Beach = Tables<'beaches'>;
+import { beaches as initialBeaches, Beach } from '@/data/mockData';
 
 export function useAdminBeaches() {
-  const [beaches, setBeaches] = useState<Beach[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [beaches, setBeaches] = useState<Beach[]>(initialBeaches);
+  const [isLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-
-  const fetchBeaches = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('beaches')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setBeaches(data || []);
-    } catch (error: any) {
-      toast({
-        title: 'Error fetching beaches',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchBeaches();
-  }, []);
 
   const addBeach = async (data: {
     name: string;
@@ -48,23 +21,21 @@ export function useAdminBeaches() {
   }) => {
     setIsSubmitting(true);
     try {
-      const { data: newBeach, error } = await supabase
-        .from('beaches')
-        .insert({
-          name: data.name,
-          country: data.country,
-          region: data.region || null,
-          latitude: data.latitude,
-          longitude: data.longitude,
-          threat_level: data.threat_level,
-          nests_count: data.nests_count,
-          volunteers_count: data.volunteers_count,
-          photo_url: data.photo_url || null,
-        })
-        .select()
-        .single();
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-      if (error) throw error;
+      const newBeach: Beach = {
+        id: `b${Date.now()}`,
+        name: data.name,
+        location: { lat: data.latitude, lng: data.longitude },
+        country: data.country,
+        nestCount: data.nests_count,
+        volunteers: data.volunteers_count,
+        threatLevel: data.threat_level === 'critical' ? 'high' : data.threat_level,
+        threats: [],
+        recentActivity: [],
+        image: data.photo_url || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800',
+        description: `${data.name} is a nesting beach in ${data.country}.`,
+      };
 
       setBeaches((prev) => [newBeach, ...prev]);
       toast({
@@ -100,27 +71,23 @@ export function useAdminBeaches() {
   ) => {
     setIsSubmitting(true);
     try {
-      const { data: updatedBeach, error } = await supabase
-        .from('beaches')
-        .update({
-          name: data.name,
-          country: data.country,
-          region: data.region || null,
-          latitude: data.latitude,
-          longitude: data.longitude,
-          threat_level: data.threat_level,
-          nests_count: data.nests_count,
-          volunteers_count: data.volunteers_count,
-          photo_url: data.photo_url || null,
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       setBeaches((prev) =>
-        prev.map((b) => (b.id === id ? updatedBeach : b))
+        prev.map((b) =>
+          b.id === id
+            ? {
+                ...b,
+                name: data.name,
+                country: data.country,
+                location: { lat: data.latitude, lng: data.longitude },
+                nestCount: data.nests_count,
+                volunteers: data.volunteers_count,
+                threatLevel: data.threat_level === 'critical' ? 'high' : data.threat_level,
+                image: data.photo_url || b.image,
+              }
+            : b
+        )
       );
       toast({
         title: 'Beach updated',
@@ -142,9 +109,7 @@ export function useAdminBeaches() {
   const deleteBeach = async (id: string, name: string) => {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('beaches').delete().eq('id', id);
-
-      if (error) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       setBeaches((prev) => prev.filter((b) => b.id !== id));
       toast({
@@ -171,6 +136,6 @@ export function useAdminBeaches() {
     addBeach,
     updateBeach,
     deleteBeach,
-    refetch: fetchBeaches,
+    refetch: () => {},
   };
 }

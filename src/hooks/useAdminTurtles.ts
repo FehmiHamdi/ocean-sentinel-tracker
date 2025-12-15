@@ -1,39 +1,12 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import type { Tables } from '@/integrations/supabase/types';
-
-type Turtle = Tables<'turtles'>;
+import { turtles as initialTurtles, Turtle } from '@/data/mockData';
 
 export function useAdminTurtles() {
-  const [turtles, setTurtles] = useState<Turtle[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [turtles, setTurtles] = useState<Turtle[]>(initialTurtles);
+  const [isLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-
-  const fetchTurtles = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('turtles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setTurtles(data || []);
-    } catch (error: any) {
-      toast({
-        title: 'Error fetching turtles',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTurtles();
-  }, []);
 
   const addTurtle = async (data: {
     name: string;
@@ -41,32 +14,38 @@ export function useAdminTurtles() {
     tag_id: string;
     status: 'active' | 'missing' | 'released' | 'deceased';
     threat_level: 'low' | 'medium' | 'high' | 'critical';
-    health_status?: string;
     age?: number;
     weight?: number;
     length?: number;
+    health_status?: string;
     photo_url?: string;
   }) => {
     setIsSubmitting(true);
     try {
-      const { data: newTurtle, error } = await supabase
-        .from('turtles')
-        .insert({
-          name: data.name,
-          species: data.species,
-          tag_id: data.tag_id,
-          status: data.status,
-          threat_level: data.threat_level,
-          health_status: data.health_status || 'Healthy',
-          age: data.age || null,
-          weight: data.weight || null,
-          length: data.length || null,
-          photo_url: data.photo_url || null,
-        })
-        .select()
-        .single();
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-      if (error) throw error;
+      const newTurtle: Turtle = {
+        id: `t${Date.now()}`,
+        name: data.name,
+        species: data.species,
+        speciesScientific: data.species,
+        age: data.age || 0,
+        weight: data.weight || 0,
+        length: data.length || 0,
+        status: data.status === 'active' ? 'active' : data.status === 'missing' ? 'migrating' : 'resting',
+        healthStatus: (data.health_status?.toLowerCase() as Turtle['healthStatus']) || 'good',
+        threatLevel: data.threat_level === 'critical' ? 'high' : data.threat_level,
+        lastSeen: new Date().toISOString(),
+        temperature: 25,
+        speed: 1.5,
+        depth: 10,
+        image: data.photo_url || 'https://images.unsplash.com/photo-1591025207163-942350e47db2?w=800',
+        description: `${data.name} is a ${data.species} turtle.`,
+        location: { lat: 0, lng: 0 },
+        migrationTrail: [],
+        taggedDate: new Date().toISOString().split('T')[0],
+        totalDistance: 0,
+      };
 
       setTurtles((prev) => [newTurtle, ...prev]);
       toast({
@@ -94,37 +73,33 @@ export function useAdminTurtles() {
       tag_id: string;
       status: 'active' | 'missing' | 'released' | 'deceased';
       threat_level: 'low' | 'medium' | 'high' | 'critical';
-      health_status?: string;
       age?: number;
       weight?: number;
       length?: number;
+      health_status?: string;
       photo_url?: string;
     }
   ) => {
     setIsSubmitting(true);
     try {
-      const { data: updatedTurtle, error } = await supabase
-        .from('turtles')
-        .update({
-          name: data.name,
-          species: data.species,
-          tag_id: data.tag_id,
-          status: data.status,
-          threat_level: data.threat_level,
-          health_status: data.health_status || 'Healthy',
-          age: data.age || null,
-          weight: data.weight || null,
-          length: data.length || null,
-          photo_url: data.photo_url || null,
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       setTurtles((prev) =>
-        prev.map((t) => (t.id === id ? updatedTurtle : t))
+        prev.map((t) =>
+          t.id === id
+            ? {
+                ...t,
+                name: data.name,
+                species: data.species,
+                age: data.age || t.age,
+                weight: data.weight || t.weight,
+                length: data.length || t.length,
+                healthStatus: (data.health_status?.toLowerCase() as Turtle['healthStatus']) || t.healthStatus,
+                threatLevel: data.threat_level === 'critical' ? 'high' : data.threat_level,
+                image: data.photo_url || t.image,
+              }
+            : t
+        )
       );
       toast({
         title: 'Turtle updated',
@@ -146,9 +121,7 @@ export function useAdminTurtles() {
   const deleteTurtle = async (id: string, name: string) => {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('turtles').delete().eq('id', id);
-
-      if (error) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       setTurtles((prev) => prev.filter((t) => t.id !== id));
       toast({
@@ -175,6 +148,6 @@ export function useAdminTurtles() {
     addTurtle,
     updateTurtle,
     deleteTurtle,
-    refetch: fetchTurtles,
+    refetch: () => {},
   };
 }

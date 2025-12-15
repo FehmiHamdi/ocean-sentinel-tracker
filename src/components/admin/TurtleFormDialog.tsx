@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import type { Turtle } from '@/data/mockData';
 
 const turtleSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
@@ -45,19 +46,7 @@ type TurtleFormData = z.infer<typeof turtleSchema>;
 interface TurtleFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  turtle?: {
-    id: string;
-    name: string;
-    species: string;
-    tag_id: string;
-    status: 'active' | 'missing' | 'released' | 'deceased';
-    threat_level: 'low' | 'medium' | 'high' | 'critical';
-    health_status?: string | null;
-    age?: number | null;
-    weight?: number | null;
-    length?: number | null;
-    photo_url?: string | null;
-  } | null;
+  turtle?: Turtle | null;
   onSubmit: (data: TurtleFormData) => Promise<void>;
   isLoading: boolean;
 }
@@ -92,14 +81,14 @@ export function TurtleFormDialog({
       form.reset({
         name: turtle.name,
         species: turtle.species,
-        tag_id: turtle.tag_id,
-        status: turtle.status,
-        threat_level: turtle.threat_level,
-        health_status: turtle.health_status || 'Healthy',
+        tag_id: turtle.id,
+        status: turtle.status === 'migrating' || turtle.status === 'nesting' ? 'active' : turtle.status === 'resting' ? 'released' : 'active',
+        threat_level: turtle.threatLevel,
+        health_status: turtle.healthStatus.charAt(0).toUpperCase() + turtle.healthStatus.slice(1),
         age: turtle.age || undefined,
         weight: turtle.weight || undefined,
         length: turtle.length || undefined,
-        photo_url: turtle.photo_url || '',
+        photo_url: turtle.image || '',
       });
     } else {
       form.reset({
@@ -247,11 +236,10 @@ export function TurtleFormDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Healthy">Healthy</SelectItem>
+                      <SelectItem value="Excellent">Excellent</SelectItem>
                       <SelectItem value="Good">Good</SelectItem>
                       <SelectItem value="Fair">Fair</SelectItem>
                       <SelectItem value="Poor">Poor</SelectItem>
-                      <SelectItem value="Critical">Critical</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

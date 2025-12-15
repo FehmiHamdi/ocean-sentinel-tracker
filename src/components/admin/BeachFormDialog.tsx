@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import type { Beach } from '@/data/mockData';
 
 const beachSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
@@ -44,18 +45,7 @@ type BeachFormData = z.infer<typeof beachSchema>;
 interface BeachFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  beach?: {
-    id: string;
-    name: string;
-    country: string;
-    region?: string | null;
-    latitude: number;
-    longitude: number;
-    threat_level: 'low' | 'medium' | 'high' | 'critical';
-    nests_count: number;
-    volunteers_count: number;
-    photo_url?: string | null;
-  } | null;
+  beach?: Beach | null;
   onSubmit: (data: BeachFormData) => Promise<void>;
   isLoading: boolean;
 }
@@ -89,13 +79,13 @@ export function BeachFormDialog({
       form.reset({
         name: beach.name,
         country: beach.country,
-        region: beach.region || '',
-        latitude: beach.latitude,
-        longitude: beach.longitude,
-        threat_level: beach.threat_level,
-        nests_count: beach.nests_count,
-        volunteers_count: beach.volunteers_count,
-        photo_url: beach.photo_url || '',
+        region: '',
+        latitude: beach.location.lat,
+        longitude: beach.location.lng,
+        threat_level: beach.threatLevel,
+        nests_count: beach.nestCount,
+        volunteers_count: beach.volunteers,
+        photo_url: beach.image || '',
       });
     } else {
       form.reset({
