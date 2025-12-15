@@ -8,23 +8,35 @@ import {
   Waves, 
   LayoutDashboard,
   Menu,
-  X
+  X,
+  LogIn,
+  LogOut,
+  Heart,
+  Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
-const navLinks = [
+const publicNavLinks = [
   { href: '/', label: 'Home', icon: Shell },
   { href: '/track', label: 'Track Turtles', icon: Map },
   { href: '/turtles', label: 'Turtle Profiles', icon: Shell },
   { href: '/beaches', label: 'Nesting Beaches', icon: Waves },
   { href: '/education', label: 'Learn', icon: GraduationCap },
-  { href: '/admin', label: 'Admin', icon: LayoutDashboard },
 ];
 
 export function Navbar() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, isAdmin, isVolunteer, logout } = useAuth();
+
+  // Build nav links based on auth state
+  const navLinks = [
+    ...publicNavLinks,
+    ...(isAdmin ? [{ href: '/admin', label: 'Admin', icon: LayoutDashboard }] : []),
+    ...(isVolunteer ? [{ href: '/volunteer', label: 'My Dashboard', icon: Heart }] : []),
+  ];
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
@@ -74,6 +86,31 @@ export function Navbar() {
                 </Link>
               );
             })}
+
+            {/* Auth Buttons */}
+            <div className="flex items-center gap-2 ml-4 pl-4 border-l border-border/50">
+              {user ? (
+                <Button variant="ghost" size="sm" onClick={logout} className="text-muted-foreground">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
+              ) : (
+                <>
+                  <Link to="/admin/login">
+                    <Button variant="ghost" size="sm" className="text-muted-foreground">
+                      <Shield className="w-4 h-4 mr-2" />
+                      Admin
+                    </Button>
+                  </Link>
+                  <Link to="/volunteer/login">
+                    <Button size="sm">
+                      <Heart className="w-4 h-4 mr-2" />
+                      Volunteer
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Mobile Menu Button */}
@@ -118,6 +155,41 @@ export function Navbar() {
                     </Link>
                   );
                 })}
+
+                {/* Mobile Auth Links */}
+                <div className="border-t border-border/50 mt-2 pt-2">
+                  {user ? (
+                    <button
+                      onClick={() => {
+                        logout();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground w-full"
+                    >
+                      <LogOut className="w-5 h-5" />
+                      Logout ({user.username})
+                    </button>
+                  ) : (
+                    <>
+                      <Link
+                        to="/admin/login"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                      >
+                        <Shield className="w-5 h-5" />
+                        Admin Login
+                      </Link>
+                      <Link
+                        to="/volunteer/login"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-primary bg-primary/10"
+                      >
+                        <Heart className="w-5 h-5" />
+                        Volunteer Login
+                      </Link>
+                    </>
+                  )}
+                </div>
               </div>
             </motion.div>
           )}

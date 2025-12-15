@@ -12,11 +12,14 @@ import {
   Bell,
   BarChart3,
   Activity,
-  Loader2
+  Loader2,
+  LogOut
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { StatCard } from '@/components/StatCard';
+import { useAuth } from '@/contexts/AuthContext';
 import { alerts, stats } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,6 +69,13 @@ const statusColors: Record<string, string> = {
 
 export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
   
   // Turtle state
   const {
@@ -200,10 +210,16 @@ export default function AdminPage() {
                 Manage turtle tracking data, beaches, and monitor conservation efforts.
               </p>
             </div>
-            <Button className="shrink-0" onClick={handleAddTurtle}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add New Turtle
-            </Button>
+            <div className="flex gap-3">
+              <Button className="shrink-0" onClick={handleAddTurtle}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add New Turtle
+              </Button>
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </div>
           </motion.div>
         </div>
       </section>
